@@ -1,0 +1,2219 @@
+private void SetupUI()
+        {
+            Controls.Clear();
+
+            // Sidebar removed
+
+            // 2. Collapsible Context Sidebar Panel (Left-Docked, initially invisible/0px width)
+            _contextSidebar = new Panel
+            {
+                Dock = DockStyle.Left,
+                Width = 0,
+                Visible = false,
+                BackColor = Color.FromArgb(33, 33, 33) // slate-900
+            };
+            _contextSidebar.Paint += ContextSidebar_Paint;
+            Controls.Add(_contextSidebar);
+
+            _sidebarSplitter = new Splitter
+            {
+                Dock = DockStyle.Left,
+                Width = 3,
+                BackColor = Color.FromArgb(47, 47, 47), // #2F2F2F
+                Visible = false,
+                Cursor = Cursors.SizeWE
+            };
+            _sidebarSplitter.SplitterMoved += (s, e) =>
+            {
+                _savedSidebarWidth = _contextSidebar.Width;
+                SaveWindowPositionAndSize();
+            };
+            Controls.Add(_sidebarSplitter);
+
+            // 3. Main Chat Panel (Docked Fill)
+            _mainPanel = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(33, 33, 33)
+            };
+            Controls.Add(_mainPanel);
+
+            // Custom Title Header Panel
+            _headerPanel = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 65,
+                BackColor = Color.FromArgb(47, 47, 47) // slate-800
+            };
+            _headerPanel.MouseDown += (s, e) => { if (e.Clicks == 1) HeaderPanel_MouseDown(s, e); };
+            _headerPanel.DoubleClick += (s, e) =>
+            {
+                this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+            };
+            _mainPanel.Controls.Add(_headerPanel);
+
+            // Window control buttons (top right of header)
+            var _closeBtn = new Button
+            {
+                Text = "\xE8BB",
+                Font = new Font("Segoe MDL2 Assets", 9f),
+                ForeColor = Color.FromArgb(148, 163, 184), // slate-400
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(_headerPanel.Width - 36, 12),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Cursor = Cursors.Hand
+            };
+            _closeBtn.FlatAppearance.BorderSize = 0;
+            _closeBtn.Click += (_, _) => Hide();
+            _closeBtn.MouseEnter += (s, e) => { _closeBtn.BackColor = Color.FromArgb(239, 68, 68); _closeBtn.ForeColor = Color.White; };
+            _closeBtn.MouseLeave += (s, e) => { _closeBtn.BackColor = Color.Transparent; _closeBtn.ForeColor = Color.FromArgb(148, 163, 184); };
+            _headerPanel.Controls.Add(_closeBtn);
+
+            var _maxBtn = new Button
+            {
+                Text = "\xE922",
+                Font = new Font("Segoe MDL2 Assets", 8.5f),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(_headerPanel.Width - 68, 12),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Cursor = Cursors.Hand
+            };
+            _maxBtn.FlatAppearance.BorderSize = 0;
+            _maxBtn.Click += (_, _) => {
+                this.WindowState = this.WindowState == FormWindowState.Maximized ? FormWindowState.Normal : FormWindowState.Maximized;
+            };
+            _maxBtn.MouseEnter += (s, e) => { _maxBtn.BackColor = Color.FromArgb(64, 64, 64); };
+            _maxBtn.MouseLeave += (s, e) => { _maxBtn.BackColor = Color.Transparent; };
+            _headerPanel.Controls.Add(_maxBtn);
+
+            var _minBtn = new Button
+            {
+                Text = "\xE921",
+                Font = new Font("Segoe MDL2 Assets", 8.5f),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(_headerPanel.Width - 100, 12),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Cursor = Cursors.Hand
+            };
+            _minBtn.FlatAppearance.BorderSize = 0;
+            _minBtn.Click += (_, _) => {
+                this.WindowState = FormWindowState.Minimized;
+            };
+            _minBtn.MouseEnter += (s, e) => { _minBtn.BackColor = Color.FromArgb(64, 64, 64); };
+            _minBtn.MouseLeave += (s, e) => { _minBtn.BackColor = Color.Transparent; };
+            _headerPanel.Controls.Add(_minBtn);
+
+            // Sidebar toggle removed
+
+            // Header Avatar Circle
+            var _headerAvatar = new Panel
+            {
+                Size = new Size(36, 36),
+                Location = new Point(16, 14),
+                BackColor = Color.Transparent
+            };
+            _headerAvatar.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using var brush = new SolidBrush(_agent.BodyColor);
+                e.Graphics.FillEllipse(brush, 0, 0, 35, 35);
+                using var font = new Font("Segoe UI", 11f, FontStyle.Bold);
+                var letter = _agent.CharacterName.Substring(0, 1).ToUpper();
+                var sz = e.Graphics.MeasureString(letter, font);
+                e.Graphics.DrawString(letter, font, Brushes.White, (35 - sz.Width) / 2, (35 - sz.Height) / 2);
+            };
+            _headerPanel.Controls.Add(_headerAvatar);
+
+            // Active Agent Title Label
+            var titleLabel = new Label
+            {
+                Text = _agent.CharacterName,
+                Font = new Font("Segoe UI Semibold", 12f, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(60, 12),
+                Size = new Size(200, 22)
+            };
+            _headerPanel.Controls.Add(titleLabel);
+
+            // Status Indicator Circle
+            _statusIndicator = new Panel
+            {
+                Size = new Size(6, 6),
+                Location = new Point(60, 39),
+                BackColor = Color.FromArgb(34, 197, 94) // green-500
+            };
+            _headerPanel.Controls.Add(_statusIndicator);
+
+            // Status Text label
+            _statusLabel = new Label
+            {
+                Text = "Online",
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                Location = new Point(72, 34),
+                Size = new Size(100, 16)
+            };
+            _headerPanel.Controls.Add(_statusLabel);
+
+            // Model Selection - modern styled Button + ContextMenuStrip
+            _modelMenu = new ContextMenuStrip
+            {
+                BackColor = Color.FromArgb(40, 40, 40),
+                ForeColor = Color.White,
+                ShowImageMargin = false,
+                Font = new Font("Segoe UI", 9f)
+            };
+            _modelMenu.Renderer = new ToolStripProfessionalRenderer(new DarkMenuColorTable());
+
+            _modelSelectBtn = new Button
+            {
+                Text = "model \u25BE",
+                BackColor = Color.FromArgb(55, 55, 55),
+                ForeColor = Color.FromArgb(200, 200, 200),
+                Font = new Font("Segoe UI", 8.5f),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(130, 26),
+                Location = new Point(220, 20),
+                Cursor = Cursors.Hand,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            _modelSelectBtn.FlatAppearance.BorderSize = 1;
+            _modelSelectBtn.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 70);
+            _modelSelectBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(65, 65, 65);
+            _modelSelectBtn.Click += (s, e) => _modelMenu.Show(_modelSelectBtn, new Point(0, _modelSelectBtn.Height));
+            _headerPanel.Controls.Add(_modelSelectBtn);
+
+            // Keep hidden ComboBox for backward compat
+            _modelSelectBox = new ComboBox { Visible = false };
+            _headerPanel.Controls.Add(_modelSelectBox);
+
+            // Clear chat history button inside header
+            _clearButton = new Button
+            {
+                Text = "\xE74D",
+                Font = new Font("Segoe MDL2 Assets", 9.5f),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(360, 18),
+                Cursor = Cursors.Hand
+            };
+            _clearButton.FlatAppearance.BorderSize = 0;
+            _clearButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(64, 64, 64);
+            _clearButton.Click += (_, _) => ClearChatHistory();
+            _headerPanel.Controls.Add(_clearButton);
+
+            // Cancel Generation button (visible when generating)
+            _cancelButton = new Button
+            {
+                Text = "\xE71A",
+                Font = new Font("Segoe MDL2 Assets", 9.5f),
+                ForeColor = Color.FromArgb(244, 63, 94), // rose-500
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(186, 18),
+                Visible = false,
+                Cursor = Cursors.Hand
+            };
+            _cancelButton.FlatAppearance.BorderSize = 0;
+            _cancelButton.Click += (_, _) => CancelGeneration();
+            _headerPanel.Controls.Add(_cancelButton);
+
+            // Autonomous Mode Toggle Button
+            _autoChatBtn = new Button
+            {
+                Text = "\xE768", // Play icon
+                Font = new Font("Segoe MDL2 Assets", 10.5f),
+                ForeColor = Color.FromArgb(148, 163, 184),
+                BackColor = Color.Transparent,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Location = new Point(152, 18), // Left of clear/cancel button
+                Visible = false,
+                Cursor = Cursors.Hand
+            };
+            _autoChatBtn.FlatAppearance.BorderSize = 0;
+            _autoChatBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(64, 64, 64);
+            _autoChatBtn.Click += AutoChatBtn_Click;
+            _headerPanel.Controls.Add(_autoChatBtn);
+
+            // 4. Conversation Scroll Stream
+            _chatPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoScroll = true,
+                BackColor = Color.FromArgb(33, 33, 33),
+                Padding = new Padding(12, 12, 12, 12)
+            };
+            _chatPanel.SizeChanged += (s, e) => ResizeMessageRows();
+            _mainPanel.Controls.Add(_chatPanel);
+            _chatPanel.BringToFront(); // layer properly below header
+
+            // 5. Compose Text Input Container (docks bottom)
+            _inputContainer = new Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 85,
+                BackColor = Color.FromArgb(33, 33, 33),
+                Padding = new Padding(12, 6, 12, 12)
+            };
+            _mainPanel.Controls.Add(_inputContainer);
+            _inputContainer.BringToFront();
+
+            // Dotted highlight drag overlay (hidden by default)
+            _dropZoneOverlay = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(200, 15, 23, 42),
+                Visible = false
+            };
+            _dropZoneOverlay.Paint += DropZoneOverlay_Paint;
+            _mainPanel.Controls.Add(_dropZoneOverlay);
+
+            // Rounded Input Capsule Card (slate-800)
+            _inputCard = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.FromArgb(47, 47, 47), // slate-800
+                Padding = new Padding(10, 6, 10, 6)
+            };
+            _inputCard.Paint += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0.5f, 0.5f, _inputCard.Width - 1f, _inputCard.Height - 1f), 10);
+                using var pen = new Pen(Color.FromArgb(82, 82, 82), 1f); // slate-600
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.DrawPath(pen, p);
+            };
+            _inputCard.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, _inputCard.Width, _inputCard.Height), 10);
+                _inputCard.Region = new Region(p);
+            };
+            _inputContainer.Controls.Add(_inputCard);
+
+            // Removable attached files FlowLayoutPanel inside the card
+            _attachmentsPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 0, // initially 0 height (no attachments)
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = true,
+                AutoScroll = true,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0)
+            };
+            _inputCard.Controls.Add(_attachmentsPanel);
+
+            // Compose Expandable Text Box
+            _messageBox = new RichTextBox
+            {
+                Multiline = true,
+                ScrollBars = RichTextBoxScrollBars.None, // Hide ugly native scrollbars
+                Font = new Font("Segoe UI", 11f), // Larger, airier modern font
+                BackColor = Color.FromArgb(47, 47, 47),
+                ForeColor = Color.White,
+                BorderStyle = BorderStyle.None,
+                Location = new Point(12, 6),
+                Width = 260,
+                Height = 30
+            };
+            _messageBox.KeyDown += OnMessageKeyDown;
+            _messageBox.TextChanged += MessageBox_TextChanged;
+            
+            // Ghost Placeholder Label
+            _placeholderLabel = new Label
+            {
+                Text = "Message agents...",
+                Font = new Font("Segoe UI", 11f),
+                ForeColor = Color.FromArgb(156, 163, 175), // gray-400
+                BackColor = Color.FromArgb(47, 47, 47),
+                AutoSize = true,
+                Cursor = Cursors.IBeam
+            };
+            _placeholderLabel.Click += (s, e) => _messageBox.Focus();
+            
+            _inputCard.Controls.Add(_placeholderLabel);
+            _inputCard.Controls.Add(_messageBox);
+
+            // Send Button inside input capsule
+            _sendButton = new Button
+            {
+                Text = "\xE724",
+                Font = new Font("Segoe MDL2 Assets", 11f),
+                BackColor = Color.FromArgb(0, 168, 132), // WhatsApp teal
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(34, 34),
+                Cursor = Cursors.Hand
+            };
+            _sendButton.FlatAppearance.BorderSize = 0;
+            _sendButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(0, 140, 110);
+            _sendButton.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, _sendButton.Width, _sendButton.Height), _sendButton.Width / 2);
+                _sendButton.Region = new Region(p);
+            };
+            _sendButton.Click += async (_, _) => await SendCurrentMessageAsync();
+            _inputCard.Controls.Add(_sendButton);
+
+            // Microphone Voice Input button
+            _micButton = new Button
+            {
+                Text = "\xE720",
+                Font = new Font("Segoe MDL2 Assets", 9.5f),
+                BackColor = Color.FromArgb(82, 82, 82), // slate-600
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Cursor = Cursors.Hand
+            };
+            _micButton.FlatAppearance.BorderSize = 0;
+            _micButton.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, _micButton.Width, _micButton.Height), _micButton.Width / 2);
+                _micButton.Region = new Region(p);
+            };
+            _micButton.Click += MicButton_Click;
+            _micButton.MouseEnter += (s, e) => { _micButton.BackColor = Color.FromArgb(64, 64, 64); };
+            _micButton.MouseLeave += (s, e) => { _micButton.BackColor = Color.FromArgb(82, 82, 82); };
+            _inputCard.Controls.Add(_micButton);
+
+            // Camera Screen capture button
+            _cameraButton = new Button
+            {
+                Text = "\xE722",
+                Font = new Font("Segoe MDL2 Assets", 9f),
+                BackColor = Color.FromArgb(82, 82, 82),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Cursor = Cursors.Hand
+            };
+            _cameraButton.FlatAppearance.BorderSize = 0;
+            _cameraButton.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, _cameraButton.Width, _cameraButton.Height), _cameraButton.Width / 2);
+                _cameraButton.Region = new Region(p);
+            };
+            _cameraButton.Click += (_, _) => CaptureScreenAsync();
+            _cameraButton.MouseEnter += (s, e) => { _cameraButton.BackColor = Color.FromArgb(64, 64, 64); };
+            _cameraButton.MouseLeave += (s, e) => { _cameraButton.BackColor = Color.FromArgb(82, 82, 82); };
+            _inputCard.Controls.Add(_cameraButton);
+
+            // Upload File button inside input capsule (Gemini style '+' icon)
+            _uploadButton = new Button
+            {
+                Text = "\xE109", // Plus icon
+                Font = new Font("Segoe MDL2 Assets", 10f, FontStyle.Bold),
+                BackColor = Color.FromArgb(82, 82, 82), // slate-600
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(28, 28),
+                Cursor = Cursors.Hand
+            };
+            _uploadButton.FlatAppearance.BorderSize = 0;
+            _uploadButton.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, _uploadButton.Width, _uploadButton.Height), _uploadButton.Width / 2);
+                _uploadButton.Region = new Region(p);
+            };
+            _uploadButton.Click += (s, e) =>
+            {
+                using var ofd = new OpenFileDialog();
+                ofd.Title = "Select file to upload";
+                ofd.Filter = "All files (*.*)|*.*";
+                ofd.Multiselect = true;
+                if (ofd.ShowDialog(this) == DialogResult.OK)
+                {
+                    foreach (var file in ofd.FileNames)
+                    {
+                        try
+                        {
+                            string fileName = Path.GetFileName(file);
+                            string content = ProcessBinaryFile(file);
+                            AddAttachmentFromFile(fileName, content);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"File load issue: {ex.Message}");
+                        }
+                    }
+                }
+            };
+            _uploadButton.MouseEnter += (s, e) => { _uploadButton.BackColor = Color.FromArgb(64, 64, 64); };
+            _uploadButton.MouseLeave += (s, e) => { _uploadButton.BackColor = Color.FromArgb(82, 82, 82); };
+            _inputCard.Controls.Add(_uploadButton);
+
+            // Voice visualizer wave overlay
+            _waveOverlayPanel = new Panel
+            {
+                Height = 36,
+                BackColor = Color.FromArgb(47, 47, 47),
+                Visible = false
+            };
+            _waveOverlayPanel.Paint += WaveOverlayPanel_Paint;
+            _inputCard.Controls.Add(_waveOverlayPanel);
+
+            PositionInputControls();
+
+            _modelSelectBox.SelectedIndexChanged += ModelSelectBox_SelectedIndexChanged;
+            PopulateModelsDropdown();
+
+            // Set up drag and drop routing for all relevant panels/controls
+            RegisterDragDrop(this);
+            RegisterDragDrop(_mainPanel);
+            RegisterDragDrop(_chatPanel);
+            RegisterDragDrop(_inputContainer);
+            RegisterDragDrop(_inputCard);
+            RegisterDragDrop(_messageBox);
+            RegisterDragDrop(_dropZoneOverlay);
+        }
+
+        private void PositionInputControls()
+        {
+            if (_messageBox == null || _inputCard == null) return;
+
+            int cardW = _inputCard.Width;
+            int cardH = _inputCard.Height;
+            int attachmentsHeight = _attachmentsPanel.Height;
+
+            // Positioning the '+' (Upload) button on the left
+            if (_uploadButton != null) 
+            {
+                _uploadButton.Location = new Point(10, cardH - 34);
+            }
+
+            // The text box and attachments start after the upload button
+            int contentStartX = 46;
+            
+            // Buttons on the right: Mic, Camera, Send (each 28px wide + 4px spacing = 32px each)
+            int rightButtonsCount = 1; // Only Send button now
+            int rightButtonsWidth = rightButtonsCount * 32;
+            
+            // The available width for text and attachments
+            int contentWidth = Math.Max(100, cardW - contentStartX - rightButtonsWidth - 10);
+
+            _attachmentsPanel.Location = new Point(contentStartX, 4);
+            _attachmentsPanel.Width = contentWidth;
+
+            int tbY = attachmentsHeight + 6;
+            int tbH = cardH - attachmentsHeight - 12;
+
+            _messageBox.Location = new Point(contentStartX, tbY);
+            _messageBox.Size = new Size(contentWidth, tbH);
+            
+            if (_placeholderLabel != null)
+            {
+                _placeholderLabel.Location = new Point(contentStartX + 2, tbY + 2);
+            }
+
+            // Right-aligned buttons
+            _sendButton.Location = new Point(cardW - 44, cardH - 40);
+            
+            if (_micButton != null) _micButton.Visible = false;
+            if (_cameraButton != null) _cameraButton.Visible = false;
+
+            _waveOverlayPanel.Location = new Point(contentStartX, tbY - 2);
+            _waveOverlayPanel.Size = new Size(contentWidth, tbH + 4);
+        }
+
+        private void PopulateModelsDropdown()
+        {
+            _modelMenu.Items.Clear();
+            _modelSelectBtn.Text = _agent.ModelName + " \u25BE";
+
+            if (_agent.AIProvider == "OLLAMA")
+            {
+                AddModelMenuItem(_agent.ModelName);
+                LoadEndpointOllamaModelsAsync();
+            }
+            else
+            {
+                string[] defaults = { "gpt-4o", "claude-3-5-sonnet", "gemini-1.5-pro", "gemini-2.5-flash", "deepseek-chat" };
+                foreach (var m in defaults) AddModelMenuItem(m);
+                if (Array.IndexOf(defaults, _agent.ModelName) == -1)
+                {
+                    AddModelMenuItem(_agent.ModelName);
+                }
+            }
+        }
+
+        private void AddModelMenuItem(string modelName)
+        {
+            var item = new ToolStripMenuItem(modelName);
+            item.Click += (s, e) =>
+            {
+                _agent.ModelName = modelName;
+                _modelSelectBtn.Text = modelName + " \u25BE";
+                _chatService = new LocalAgentChatService(_agent);
+            };
+            _modelMenu.Items.Add(item);
+        }
+
+        private async void LoadEndpointOllamaModelsAsync()
+        {
+            try
+            {
+                // Fetch models dynamically from local Ollama tags URL
+                string url = _agent.Endpoint.Trim();
+                if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
+                    !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    url = "http://" + url;
+                }
+                string tagsUrl = new Uri(url).Authority;
+                tagsUrl = $"http://{tagsUrl}/api/tags";
+
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                var response = await client.GetAsync(tagsUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    if (root.TryGetProperty("models", out var modelsElement))
+                    {
+                        var modelsList = new List<string>();
+                        foreach (var m in modelsElement.EnumerateArray())
+                        {
+                            if (m.TryGetProperty("name", out var nameProp))
+                            {
+                                modelsList.Add(nameProp.GetString()!);
+                            }
+                        }
+
+                        if (modelsList.Count > 0 && !IsDisposed)
+                        {
+                            _modelMenu.Items.Clear();
+                            foreach (var m in modelsList)
+                            {
+                                AddModelMenuItem(m);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void ModelSelectBox_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            string selectedModel = _modelSelectBox.Text;
+            if (string.IsNullOrWhiteSpace(selectedModel)) return;
+
+            _agent.ModelName = selectedModel;
+            _chatService = new LocalAgentChatService(_agent);
+            
+            // Persist model change back to JSON
+            try
+            {
+                var config = AppConfig.Load();
+                var definition = config.Agents.FirstOrDefault(a => a.CharacterName == _agent.CharacterName);
+                if (definition != null)
+                {
+                    definition.ModelName = selectedModel;
+                    config.Save();
+                }
+            }
+            catch { }
+
+            SetThinking(false);
+        }
+
+        private int _savedSidebarWidth = 200;
+
+        private void ToggleWorkspace()
+        {
+            _isWorkspaceExpanded = !_isWorkspaceExpanded;
+            _contextSidebar.Visible = _isWorkspaceExpanded;
+            _sidebarSplitter.Visible = _isWorkspaceExpanded;
+
+            if (_isWorkspaceExpanded)
+            {
+                _contextSidebar.Width = _savedSidebarWidth > 0 ? _savedSidebarWidth : 200;
+            }
+            
+            _headerPanel.Invalidate();
+            SaveWindowPositionAndSize();
+        }
+
+        // 55px Switcher Sidebar GDI Rendering
+        private void SidebarPanel_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Draw switcher background line
+            using var borderPen = new Pen(Color.FromArgb(64, 64, 64), 1.5f);
+            g.DrawLine(borderPen, _sidebarPanel.Width - 1, 0, _sidebarPanel.Width - 1, _sidebarPanel.Height);
+
+            // Vertically align active agents
+            int yOffset = 20;
+            for (int i = 0; i < _config.Agents.Count; i++)
+            {
+                var def = _config.Agents[i];
+                var bodyColor = ColorTranslator.FromHtml(def.ColorHex);
+
+                // Check active state
+                bool isActive = _activeGroup == null && def.CharacterName == _agent?.CharacterName;
+
+                // Active vertical Discord marker
+                if (isActive)
+                {
+                    using var markerBrush = new SolidBrush(Color.White);
+                    using var markerPath = RoundedRect(new RectangleF(2, yOffset + 8, 3, 24), 1);
+                    g.FillPath(markerBrush, markerPath);
+                }
+
+                // Avatar circular container
+                var rect = new RectangleF(10, yOffset, 36, 36);
+                using var brush = new SolidBrush(bodyColor);
+                g.FillEllipse(brush, rect);
+
+                // Avatar text letter
+                using var font = new Font("Segoe UI", 11f, FontStyle.Bold);
+                var letter = def.CharacterName.Substring(0, 1).ToUpper();
+                var size = g.MeasureString(letter, font);
+                g.DrawString(letter, font, Brushes.White, rect.X + (rect.Width - size.Width) / 2, rect.Y + (rect.Height - size.Height) / 2);
+
+                yOffset += 50;
+            }
+
+            // Separator between Agents and Groups
+            if (_config.Groups.Count > 0)
+            {
+                using var sepPen = new Pen(Color.FromArgb(82, 82, 82), 1f); // slate-600
+                g.DrawLine(sepPen, 10, yOffset, 45, yOffset);
+                yOffset += 10;
+            }
+
+            // Vertically align groups
+            for (int i = 0; i < _config.Groups.Count; i++)
+            {
+                var grp = _config.Groups[i];
+
+                bool isActive = _activeGroup == grp;
+
+                if (isActive)
+                {
+                    using var markerBrush = new SolidBrush(Color.White);
+                    using var markerPath = RoundedRect(new RectangleF(2, yOffset + 8, 3, 24), 1);
+                    g.FillPath(markerBrush, markerPath);
+                }
+
+                var rect = new RectangleF(10, yOffset, 36, 36);
+                using var brush = new SolidBrush(Color.FromArgb(99, 102, 241)); // indigo-500
+                g.FillEllipse(brush, rect);
+
+                using var font = new Font("Segoe MDL2 Assets", 11f);
+                g.DrawString("\xE902", font, Brushes.White, rect.X + 8, rect.Y + 9); // Group icon
+
+                yOffset += 50;
+            }
+
+            // Gear Icon Settings Button at bottom
+            int gearY = _sidebarPanel.Height - 50;
+            var gearRect = new Rectangle(12, gearY, 32, 32);
+            using var gearBrush = new SolidBrush(Color.FromArgb(82, 82, 82));
+            g.FillEllipse(gearBrush, gearRect);
+            using var gearFont = new Font("Segoe MDL2 Assets", 11f);
+            g.DrawString("\xE713", gearFont, Brushes.White, gearRect.X + 8, gearRect.Y + 7);
+        }
+
+        private void SidebarPanel_MouseClick(object? sender, MouseEventArgs e)
+        {
+            int yOffset = 20;
+            for (int i = 0; i < _config.Agents.Count; i++)
+            {
+                if (e.X >= 10 && e.X <= 46 && e.Y >= yOffset && e.Y <= yOffset + 36)
+                {
+                    var def = _config.Agents[i];
+                    // Swap to that agent
+                    var runningAgent = DesktopAgentForm.ActiveAgents
+                        .FirstOrDefault(a => a.Agent.CharacterName == def.CharacterName)?.Agent 
+                        ?? new Agent(def);
+                    SwitchToAgent(runningAgent);
+                    return;
+                }
+                yOffset += 50;
+            }
+
+            if (_config.Groups.Count > 0)
+            {
+                yOffset += 10;
+            }
+
+            for (int i = 0; i < _config.Groups.Count; i++)
+            {
+                if (e.X >= 10 && e.X <= 46 && e.Y >= yOffset && e.Y <= yOffset + 36)
+                {
+                    SwitchToGroup(_config.Groups[i]);
+                    return;
+                }
+                yOffset += 50;
+            }
+
+            // Settings click
+            int gearY = _sidebarPanel.Height - 50;
+            if (e.X >= 12 && e.X <= 44 && e.Y >= gearY && e.Y <= gearY + 32)
+            {
+                var manager = new AgentManagerForm(_config);
+                manager.Show();
+            }
+        }
+
+        public void SwitchToAgent(Agent agent)
+        {
+            if (_activeGroup == null && _agent != null && _agent.CharacterName == agent.CharacterName) return;
+
+            SaveChatHistory();
+            CancelGeneration();
+
+            _activeGroup = null;
+
+            _agent = agent;
+            _chatService = new LocalAgentChatService(agent);
+            _attachments.Clear();
+            _attachmentsPanel.Controls.Clear();
+            _attachmentsPanel.Height = 0;
+
+            _history.Clear();
+            LoadChatHistory();
+
+            // Redraw switcher and load UI fields
+            _sidebarPanel.Invalidate();
+            _contextSidebar.Invalidate();
+            UpdateAgentLabels();
+            PopulateModelsDropdown();
+
+            _chatPanel.Controls.Clear();
+            LoadInitialMessage();
+
+            AdjustInputHeight();
+            _messageBox.Focus();
+        }
+
+        public void SwitchToGroup(AgentGroup group)
+        {
+            if (_activeGroup == group) return;
+
+            SaveChatHistory();
+            CancelGeneration();
+
+            _activeGroup = group;
+            
+            // Pick the first agent as the technical driver for settings, or default Nova
+            var firstMember = group.MemberNames.FirstOrDefault();
+            var def = _config.Agents.FirstOrDefault(a => a.CharacterName == firstMember) ?? _config.Agents[0];
+            var runningAgent = DesktopAgentForm.ActiveAgents
+                .FirstOrDefault(a => a.Agent.CharacterName == def.CharacterName)?.Agent 
+                ?? new Agent(def);
+                
+            _agent = runningAgent;
+            _chatService = new LocalAgentChatService(_agent);
+            _attachments.Clear();
+            _attachmentsPanel.Controls.Clear();
+            _attachmentsPanel.Height = 0;
+
+            _history.Clear();
+            LoadChatHistory(); // This will need to load history specific to the group in a real app, but for now it's just history.
+
+            _sidebarPanel.Invalidate();
+            _contextSidebar.Invalidate();
+            UpdateAgentLabels();
+            PopulateModelsDropdown();
+
+            _chatPanel.Controls.Clear();
+            LoadInitialMessage();
+
+            AdjustInputHeight();
+            _messageBox.Focus();
+        }
+
+        private void UpdateAgentLabels()
+        {
+            foreach (Control ctrl in _headerPanel.Controls)
+            {
+                if (ctrl is Label lbl && lbl.Location.X == 50 && lbl.Location.Y == 12)
+                {
+                    lbl.Text = _activeGroup != null ? _activeGroup.GroupName : _agent.CharacterName;
+                    break;
+                }
+            }
+            SetThinking(false);
+            
+            if (_autoChatBtn != null)
+            {
+                _autoChatBtn.Visible = _activeGroup != null;
+                if (_isAutoChatActive)
+                {
+                    _isAutoChatActive = false;
+                    UpdateAutoChatUI();
+                }
+            }
+        }
+
+        private void AutoChatBtn_Click(object? sender, EventArgs e)
+        {
+            _isAutoChatActive = !_isAutoChatActive;
+            UpdateAutoChatUI();
+
+            if (_isAutoChatActive && _activeGroup != null)
+            {
+                // Kick off the autonomous loop
+                _ = RunAutonomousGroupChatLoopAsync();
+            }
+        }
+
+        private void UpdateAutoChatUI()
+        {
+            DesktopAgentForm.IsAutonomousGroupMode = _isAutoChatActive;
+
+            if (_isAutoChatActive)
+            {
+                _autoChatBtn.Text = "\xE769"; // Pause/Stop icon
+                _autoChatBtn.ForeColor = Color.FromArgb(34, 197, 94); // Green when active
+            }
+            else
+            {
+                _autoChatBtn.Text = "\xE768"; // Play icon
+                _autoChatBtn.ForeColor = Color.FromArgb(148, 163, 184); // Slate when inactive
+            }
+        }
+
+        private async Task RunAutonomousGroupChatLoopAsync()
+        {
+            if (_activeGroup == null) return;
+            
+            int agentIndex = 0;
+            
+            while (_isAutoChatActive && _activeGroup != null && !IsDisposed)
+            {
+                // Find next agent in the group
+                var agentName = _activeGroup.MemberNames[agentIndex % _activeGroup.MemberNames.Count];
+                var nextDef = _config.Agents.FirstOrDefault(a => a.CharacterName == agentName);
+                
+                if (nextDef != null)
+                {
+                    var agent = DesktopAgentForm.ActiveAgents
+                        .FirstOrDefault(a => a.Agent.CharacterName == agentName)?.Agent 
+                        ?? new Agent(nextDef);
+                        
+                    // Build a generic prompt for autonomous chat continuation
+                    string prompt = "Please continue the conversation based on the context above. Provide a thoughtful and concise response.";
+                    
+                    try 
+                    {
+                        await StreamAgentResponseAsync(agent, prompt);
+                    } 
+                    catch { }
+                }
+                
+                agentIndex++;
+                
+                if (_isAutoChatActive)
+                {
+                    await Task.Delay(3000);
+                }
+            }
+        }
+
+        // 180px Collapsible Sidebar GDI Rendering
+        private void ContextSidebar_Paint(object? sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            // Draw line divider
+            using var borderPen = new Pen(Color.FromArgb(47, 47, 47), 1.5f);
+            g.DrawLine(borderPen, _contextSidebar.Width - 1, 0, _contextSidebar.Width - 1, _contextSidebar.Height);
+
+            if (_contextSidebar.Width < 120) return; // don't draw text if too thin
+
+            using var titleFont = new Font("Segoe UI Semibold", 10f, FontStyle.Bold);
+            using var sectionFont = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold);
+            using var bodyFont = new Font("Segoe UI", 8.5f);
+
+            // Workspace Header
+            using (var brushSky = new SolidBrush(Color.FromArgb(56, 189, 248)))
+            {
+                g.DrawString("WORKSPACE CONTEXT", titleFont, brushSky, 12, 16);
+            }
+
+            // 1. Agent Details
+            using (var brushSlate = new SolidBrush(Color.FromArgb(148, 163, 184)))
+            {
+                g.DrawString("AGENT INFO", sectionFont, brushSlate, 12, 50);
+                g.DrawString($"Role: {_agent.ToolName}", bodyFont, Brushes.White, 12, 70);
+                
+                // 2. Active Model
+                g.DrawString("PROVIDER CONFIG", sectionFont, brushSlate, 12, 105);
+                g.DrawString($"Server: {_agent.AIProvider}", bodyFont, Brushes.White, 12, 125);
+                g.DrawString($"Temp: {_agent.Temperature:F1}", bodyFont, Brushes.White, 12, 145);
+
+                // 3. Active Attachments list
+                g.DrawString("WORKSPACE FILES", sectionFont, brushSlate, 12, 180);
+            }
+
+            int y = 200;
+            if (_attachments.Count == 0)
+            {
+                using (var brushZinc = new SolidBrush(Color.FromArgb(113, 113, 122)))
+                {
+                    g.DrawString("(No files dropped)", bodyFont, brushZinc, 12, y);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < Math.Min(6, _attachments.Count); i++)
+                {
+                    string name = _attachments[i].FileName;
+                    if (name.Length > 20) name = name[..17] + "...";
+                    g.DrawString($"• {name}", bodyFont, Brushes.White, 12, y);
+                    y += 20;
+                }
+            }
+        }
+
+        private void MessageBox_TextChanged(object? sender, EventArgs e)
+        {
+            if (_placeholderLabel != null && _messageBox != null)
+            {
+                _placeholderLabel.Visible = string.IsNullOrEmpty(_messageBox.Text);
+                
+                // Smart Send Button Highlighting
+                if (string.IsNullOrWhiteSpace(_messageBox.Text) && _attachments.Count == 0)
+                {
+                    _sendButton.BackColor = Color.FromArgb(47, 47, 47);
+                    _sendButton.ForeColor = Color.FromArgb(156, 163, 175);
+                }
+                else
+                {
+                    _sendButton.BackColor = Color.FromArgb(236, 236, 236);
+                    _sendButton.ForeColor = Color.FromArgb(15, 23, 42); // slate-900
+                }
+            }
+            AdjustInputHeight();
+        }
+
+        private void AdjustInputHeight()
+        {
+            if (_messageBox == null) return;
+
+            using var g = _messageBox.CreateGraphics();
+            var size = g.MeasureString(_messageBox.Text + "A\nA", _messageBox.Font, _messageBox.Width - 10);
+
+            // 30px is roughly one line of 11pt Segoe UI padding. Max 180px before native mouse-wheel scroll is needed.
+            int textHeight = Math.Clamp((int)size.Height + 5, 30, 180);
+            
+            int attachmentsHeight = 0;
+            if (_attachmentsPanel.Controls.Count > 0)
+            {
+                _attachmentsPanel.PerformLayout();
+                attachmentsHeight = _attachmentsPanel.PreferredSize.Height;
+            }
+            _attachmentsPanel.Height = attachmentsHeight;
+
+            int finalContainerHeight = textHeight + attachmentsHeight + 36;
+            if (_inputContainer.Height != finalContainerHeight)
+            {
+                _inputContainer.Height = finalContainerHeight;
+                PositionInputControls();
+            }
+        }
+
+        // Add File Attachment Chip
+        public void AddAttachmentFromFile(string fileName, string content)
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            string type = "\xE8A5";
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif") type = "\xE8B9";
+            else if (ext == ".pdf") type = "\xE77F";
+            else if (ext == ".docx") type = "\xE8A5";
+            else if (ext == ".csv" || ext == ".xlsx") type = "\xEA69";
+
+            var att = new Attachment
+            {
+                FileName = fileName,
+                ContentType = ext.Contains("png") || ext.Contains("jpg") ? "image/png" : "text/plain",
+                TextContent = content
+            };
+
+            _attachments.Add(att);
+            AddAttachmentChip(fileName, type, att);
+            
+            _contextSidebar.Invalidate();
+        }
+
+        private void AddAttachmentChip(string name, string emojiIcon, Attachment att)
+        {
+            var chip = new Panel
+            {
+                Size = new Size(110, 26),
+                BackColor = Color.FromArgb(82, 82, 82), // slate-600
+                Margin = new Padding(0, 0, 8, 0)
+            };
+            chip.Paint += (s, e) =>
+            {
+                using var path = RoundedRect(new RectangleF(0.5f, 0.5f, chip.Width - 1f, chip.Height - 1f), 6);
+                using var p = new Pen(Color.FromArgb(100, 255, 255, 255), 1f);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.DrawPath(p, path);
+            };
+
+            var iconLbl = new Label
+            {
+                Text = emojiIcon,
+                Font = new Font("Segoe MDL2 Assets", 8f),
+                ForeColor = Color.White,
+                Location = new Point(4, 6),
+                Size = new Size(16, 16),
+                Cursor = Cursors.Default
+            };
+            chip.Controls.Add(iconLbl);
+
+            var lbl = new Label
+            {
+                Text = name,
+                Font = new Font("Segoe UI", 7.5f),
+                ForeColor = Color.White,
+                Location = new Point(20, 5),
+                Size = new Size(66, 16),
+                Cursor = Cursors.Default,
+                AutoEllipsis = true
+            };
+            chip.Controls.Add(lbl);
+
+            var deleteBtn = new Label
+            {
+                Text = "×",
+                Font = new Font("Segoe UI Semibold", 9f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(244, 63, 94), // rose-500
+                Location = new Point(90, 3),
+                Size = new Size(16, 20),
+                Cursor = Cursors.Hand
+            };
+            deleteBtn.Click += (s, e) =>
+            {
+                _attachments.Remove(att);
+                _attachmentsPanel.Controls.Remove(chip);
+                AdjustInputHeight();
+                _contextSidebar.Invalidate();
+            };
+            chip.Controls.Add(deleteBtn);
+
+            _attachmentsPanel.Controls.Add(chip);
+            AdjustInputHeight();
+        }
+
+        // Multi-Agent Mentions parsing & sequential queue execution
+        private List<Agent> ParseMentions(string text)
+        {
+            var mentions = new List<Agent>();
+            var words = text.Split(new[] { ' ', '\t', '\n', '\r', ',', '.', '?', '!' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var word in words)
+            {
+                if (word.StartsWith("@"))
+                {
+                    string name = word[1..].ToLowerInvariant();
+                    var def = _config.Agents.FirstOrDefault(a => a.CharacterName.Equals(name, StringComparison.OrdinalIgnoreCase));
+                    if (def != null)
+                    {
+                        var runningAgent = DesktopAgentForm.ActiveAgents
+                            .FirstOrDefault(a => a.Agent.CharacterName.Equals(name, StringComparison.OrdinalIgnoreCase))?.Agent
+                            ?? new Agent(def);
+                        
+                        if (!mentions.Contains(runningAgent))
+                        {
+                            mentions.Add(runningAgent);
+                        }
+                    }
+                }
+            }
+            return mentions;
+        }
+
+        private async Task SendCurrentMessageAsync()
+        {
+            var text = _messageBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(text) && _attachments.Count == 0) return;
+
+            _messageBox.Clear();
+            AdjustInputHeight();
+
+            // Construct final content prepending attachment payloads
+            var payloadBuilder = new StringBuilder();
+            foreach (var att in _attachments)
+            {
+                payloadBuilder.AppendLine($"[Attached File Context: {att.FileName}]");
+                payloadBuilder.AppendLine("```");
+                payloadBuilder.AppendLine(att.TextContent);
+                payloadBuilder.AppendLine("```");
+                payloadBuilder.AppendLine();
+            }
+            payloadBuilder.AppendLine(text);
+            string finalContent = payloadBuilder.ToString();
+
+            // Clear active attachments
+            _attachments.Clear();
+            _attachmentsPanel.Controls.Clear();
+            _attachmentsPanel.Height = 0;
+            _contextSidebar.Invalidate();
+
+            // Render user bubble
+            _history.Add(new ChatMessage("user", text));
+            AddMessageBubble(text, true);
+
+            // Parse Mentions
+            var mentions = ParseMentions(text);
+            _mentionedAgentsQueue.Clear();
+            foreach (var agent in mentions)
+            {
+                _mentionedAgentsQueue.Enqueue(agent);
+            }
+
+            if (_mentionedAgentsQueue.Count == 0)
+            {
+                await StreamAgentResponseAsync(_agent, finalContent);
+            }
+            else
+            {
+                var firstMention = _mentionedAgentsQueue.Dequeue();
+                await StreamAgentResponseAsync(firstMention, finalContent);
+            }
+        }
+
+        private async Task StreamAgentResponseAsync(Agent respondingAgent, string prompt)
+        {
+            // Sync desktop companion visual state
+            respondingAgent.SetThinking(true);
+            
+            // Set temporary active speech on companion
+            var companion = DesktopAgentForm.ActiveAgents.FirstOrDefault(a => a.Agent.CharacterName == respondingAgent.CharacterName);
+            companion?.SetSpeechBubble("Thinking...", 4000);
+
+            StartAgentResponseBubble(respondingAgent);
+            SetThinking(true);
+            var replyBuilder = new StringBuilder();
+
+            try
+            {
+                _currentCts = new CancellationTokenSource();
+                
+                // Route stream
+                var reply = await _chatService.SendStreamingAsync(respondingAgent, _history, delta =>
+                {
+                    replyBuilder.Append(delta);
+                    BeginInvoke(() => AddAgentDelta(delta));
+                }, _currentCts.Token);
+
+                string finalReply = string.IsNullOrWhiteSpace(replyBuilder.ToString()) ? reply : replyBuilder.ToString();
+                
+                // Add name tag to history context so other agents know who spoke
+                _history.Add(new ChatMessage("assistant", $"{respondingAgent.CharacterName}: {finalReply}"));
+                SaveChatHistory();
+            }
+            catch (OperationCanceledException)
+            {
+                AddAgentDelta("\n*Generation cancelled*");
+                _history.Add(new ChatMessage("assistant", $"{respondingAgent.CharacterName}: {replyBuilder.ToString()} \n*Generation cancelled*"));
+                SaveChatHistory();
+            }
+            catch (Exception ex)
+            {
+                AddAgentDelta($"\n*Error: {ex.Message}*");
+            }
+            finally
+            {
+                respondingAgent.SetThinking(false);
+                SetThinking(false);
+
+                if (_activeAgentResponsePanel != null)
+                {
+                    var contentFlow = _activeAgentResponsePanel.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+                    if (contentFlow != null && _activeAgentResponseLabel != null)
+                    {
+                        var fullText = _activeAgentResponseLabel.Text;
+                        contentFlow.Controls.Clear();
+                        RenderFormattedMessageIntoFlow(contentFlow, fullText, false, respondingAgent);
+                    }
+                }
+
+                _activeAgentResponseLabel = null;
+                _activeAgentResponsePanel = null;
+                _currentCts?.Dispose();
+                _currentCts = null;
+
+                // Process next agent in the mentions queue
+                if (_mentionedAgentsQueue.Count > 0)
+                {
+                    var next = _mentionedAgentsQueue.Dequeue();
+                    // Let the next agent respond to the accumulated chat history
+                    await Task.Delay(800); // brief pause to feel natural
+                    await StreamAgentResponseAsync(next, prompt);
+                }
+            }
+        }
+
+        private void AddMessageBubble(string text, bool isUserMessage)
+        {
+            AddMessageBubbleWithAgent(text, isUserMessage, _agent);
+        }
+
+        private void AddMessageBubbleWithAgent(string text, bool isUserMessage, Agent respondingAgent)
+        {
+            var rowPanel = new Panel
+            {
+                Width = _chatPanel.ClientSize.Width - 25,
+                AutoSize = false,
+                Margin = new Padding(0, 4, 0, 4),
+                BackColor = Color.Transparent,
+                Tag = isUserMessage ? "USER" : "AGENT"
+            };
+
+            // === WhatsApp-style bubble ===
+            int maxBubbleWidth = Math.Min(520, (int)(rowPanel.Width * 0.75));
+            int bubblePadH = 14;
+            int bubblePadV = 10;
+
+            var msgFont = new Font("Segoe UI", 10f);
+            var timeFont = new Font("Segoe UI", 7.5f);
+            string timeStr = DateTime.Now.ToString("h:mm tt");
+
+            int textAreaWidth = maxBubbleWidth - (bubblePadH * 2);
+            Size textSize;
+            using (var g = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                textSize = TextRenderer.MeasureText(g, text, msgFont, new Size(textAreaWidth, 9999),
+                    TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl);
+            }
+
+            int bubbleW = Math.Min(maxBubbleWidth, Math.Max(textSize.Width + bubblePadH * 2 + 60, 120));
+            int bubbleH = textSize.Height + bubblePadV * 2 + 20;
+
+            Color bubbleColor = isUserMessage
+                ? Color.FromArgb(0, 92, 75)    // WhatsApp green for user
+                : Color.FromArgb(38, 38, 38);   // Dark grey for agent
+
+            int bubbleX = isUserMessage ? rowPanel.Width - bubbleW - 8 : 8;
+
+            var bubble = new Panel
+            {
+                Size = new Size(bubbleW, bubbleH),
+                Location = new Point(bubbleX, 4),
+                BackColor = bubbleColor
+            };
+            bubble.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using var path = RoundedRect(new RectangleF(0, 0, bubble.Width, bubble.Height), 14);
+                using var br = new SolidBrush(bubbleColor);
+                e.Graphics.FillPath(br, path);
+            };
+            bubble.SizeChanged += (s, e) =>
+            {
+                using var path = RoundedRect(new RectangleF(0, 0, bubble.Width, bubble.Height), 14);
+                bubble.Region = new Region(path);
+            };
+
+            int contentY = bubblePadV;
+            if (!isUserMessage)
+            {
+                var senderLbl = new Label
+                {
+                    Text = respondingAgent.CharacterName,
+                    Font = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(respondingAgent.BodyColor.R,
+                                               respondingAgent.BodyColor.G,
+                                               respondingAgent.BodyColor.B),
+                    Location = new Point(bubblePadH, contentY),
+                    AutoSize = true,
+                    BackColor = Color.Transparent
+                };
+                bubble.Controls.Add(senderLbl);
+                contentY += senderLbl.PreferredHeight + 2;
+                bubbleH += senderLbl.PreferredHeight + 2;
+                bubble.Height = bubbleH;
+            }
+
+            var msgLabel = new Label
+            {
+                Text = text,
+                Font = msgFont,
+                ForeColor = Color.FromArgb(233, 237, 239),
+                Location = new Point(bubblePadH, contentY),
+                MaximumSize = new Size(textAreaWidth, 9999),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            };
+            bubble.Controls.Add(msgLabel);
+
+            var timeLbl = new Label
+            {
+                Text = timeStr,
+                Font = timeFont,
+                ForeColor = Color.FromArgb(140, 150, 155),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            };
+            bubble.Controls.Add(timeLbl);
+            timeLbl.Location = new Point(bubbleW - timeLbl.PreferredWidth - bubblePadH,
+                                         bubbleH - timeLbl.PreferredHeight - 6);
+
+            rowPanel.Controls.Add(bubble);
+            rowPanel.Height = bubbleH + 8;
+
+            _chatPanel.Controls.Add(rowPanel);
+            rowPanel.PerformLayout();
+            ScrollToBottomSmooth();
+        }
+
+        private void StartAgentResponseBubble(Agent respondingAgent)
+        {
+            int maxBubbleWidth = Math.Min(520, (int)((_chatPanel.ClientSize.Width - 25) * 0.75));
+
+            _activeAgentResponsePanel = new Panel
+            {
+                Width = _chatPanel.ClientSize.Width - 25,
+                Height = 80,
+                Margin = new Padding(0, 4, 0, 4),
+                BackColor = Color.Transparent
+            };
+
+            Color bubbleColor = Color.FromArgb(38, 38, 38);
+
+            var bubble = new Panel
+            {
+                Size = new Size(maxBubbleWidth, 70),
+                Location = new Point(8, 4),
+                BackColor = bubbleColor,
+                Tag = "agentBubble"
+            };
+            bubble.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using var path = RoundedRect(new RectangleF(0, 0, bubble.Width, bubble.Height), 14);
+                using var br = new SolidBrush(bubbleColor);
+                e.Graphics.FillPath(br, path);
+            };
+            bubble.SizeChanged += (s, e) =>
+            {
+                using var path = RoundedRect(new RectangleF(0, 0, bubble.Width, bubble.Height), 14);
+                bubble.Region = new Region(path);
+            };
+
+            var senderLbl = new Label
+            {
+                Text = respondingAgent.CharacterName,
+                Font = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(respondingAgent.BodyColor.R,
+                                           respondingAgent.BodyColor.G,
+                                           respondingAgent.BodyColor.B),
+                Location = new Point(14, 10),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            };
+            bubble.Controls.Add(senderLbl);
+
+            _activeAgentResponseLabel = new Label
+            {
+                Text = string.Empty,
+                Font = new Font("Segoe UI", 10f),
+                ForeColor = Color.FromArgb(233, 237, 239),
+                Location = new Point(14, senderLbl.Bottom + 4),
+                MaximumSize = new Size(maxBubbleWidth - 28, 9999),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            };
+            bubble.Controls.Add(_activeAgentResponseLabel);
+
+            _activeAgentResponseLabel.SizeChanged += (s, e) =>
+            {
+                bubble.Height = Math.Max(70, _activeAgentResponseLabel.Bottom + 28);
+                _activeAgentResponsePanel.Height = bubble.Height + 8;
+            };
+
+            _activeAgentResponsePanel.Controls.Add(bubble);
+            _chatPanel.Controls.Add(_activeAgentResponsePanel);
+
+            _activeAgentResponsePanel.PerformLayout();
+            ScrollToBottomSmooth();
+        }
+
+        private void AddAgentDelta(string text)
+        {
+            if (_activeAgentResponseLabel is null) return;
+            _activeAgentResponseLabel.Text += text;
+            ScrollToBottomSmooth();
+        }
+
+        private void RenderFormattedMessageIntoFlow(FlowLayoutPanel contentFlow, string text, bool isUser, Agent activeAgent)
+        {
+            string remainingText = text;
+            int toolStart = remainingText.IndexOf("[TOOL:", StringComparison.OrdinalIgnoreCase);
+
+            while (toolStart >= 0)
+            {
+                if (toolStart > 0)
+                {
+                    string textBefore = remainingText[..toolStart];
+                    RenderMarkdownChunksIntoFlow(contentFlow, textBefore);
+                }
+
+                int tagEnd = remainingText.IndexOf(']', toolStart);
+                if (tagEnd > toolStart)
+                {
+                    string toolHeader = remainingText.Substring(toolStart + 6, tagEnd - (toolStart + 6)).Trim();
+                    int toolEnd = remainingText.IndexOf("[/TOOL]", tagEnd, StringComparison.OrdinalIgnoreCase);
+                    string toolContent = "";
+                    int nextStartOffset = tagEnd + 1;
+
+                    if (toolEnd >= 0)
+                    {
+                        toolContent = remainingText.Substring(tagEnd + 1, toolEnd - (tagEnd + 1)).Trim();
+                        nextStartOffset = toolEnd + 7;
+                    }
+
+                    var toolCard = CreateToolCardControl(toolHeader, toolContent, contentFlow.Width, activeAgent);
+                    if (toolCard != null)
+                    {
+                        contentFlow.Controls.Add(toolCard);
+                    }
+
+                    remainingText = remainingText[nextStartOffset..];
+                }
+                else
+                {
+                    remainingText = remainingText[(toolStart + 6)..];
+                }
+
+                toolStart = remainingText.IndexOf("[TOOL:", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!string.IsNullOrEmpty(remainingText))
+            {
+                RenderMarkdownChunksIntoFlow(contentFlow, remainingText);
+            }
+
+            AddBubbleFooter(contentFlow, text, isUser);
+        }
+
+        private void RenderMarkdownChunksIntoFlow(FlowLayoutPanel contentFlow, string text)
+        {
+            var chunks = ParseMarkdown(text);
+            foreach (var chunk in chunks)
+            {
+                if (chunk.IsCode)
+                {
+                    var codeBlock = CreateCodeBlockControl(chunk.Content, chunk.Language, contentFlow.Width);
+                    contentFlow.Controls.Add(codeBlock);
+                }
+                else
+                {
+                    var cleanText = chunk.Content.Trim('\r', '\n');
+                    if (string.IsNullOrEmpty(cleanText)) continue;
+
+                    var label = new Label
+                    {
+                        Text = cleanText,
+                        Font = new Font("Segoe UI", 9.5f),
+                        ForeColor = Color.FromArgb(228, 228, 231),
+                        AutoSize = true,
+                        MaximumSize = new Size(contentFlow.Width - 10, 9999),
+                        Margin = new Padding(0, 0, 0, 8),
+                        BackColor = Color.Transparent
+                    };
+                    contentFlow.Controls.Add(label);
+                }
+            }
+        }
+
+        private Panel? CreateToolCardControl(string header, string content, int width, Agent activeAgent)
+        {
+            try
+            {
+                var card = new Panel
+                {
+                    Width = width - 15,
+                    Height = 90,
+                    BackColor = Color.FromArgb(47, 47, 47), // slate-800
+                    Padding = new Padding(12, 10, 12, 10),
+                    Margin = new Padding(0, 4, 0, 10)
+                };
+
+                card.Paint += (s, e) =>
+                {
+                    using var p = RoundedRect(new RectangleF(0.5f, 0.5f, card.Width - 1f, card.Height - 1f), 8);
+                    using var borderPen = new Pen(Color.FromArgb(56, 189, 248), 1.2f);
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.DrawPath(borderPen, p);
+                };
+                card.SizeChanged += (s, e) =>
+                {
+                    using var p = RoundedRect(new RectangleF(0, 0, card.Width, card.Height), 8);
+                    card.Region = new Region(p);
+                };
+
+                var iconLabel = new Label
+                {
+                    Text = "⚙ System Tool Request",
+                    Font = new Font("Segoe UI Semibold", 9.5f, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(56, 189, 248),
+                    Location = new Point(12, 10),
+                    AutoSize = true
+                };
+                card.Controls.Add(iconLabel);
+
+                if (header.StartsWith("WRITE_SCRIPT", StringComparison.OrdinalIgnoreCase))
+                {
+                    string filename = header[12..].Trim();
+                    var descLabel = new Label
+                    {
+                        Text = $"{activeAgent.CharacterName} requests permission to run '{filename}' script.",
+                        Font = new Font("Segoe UI", 8.5f),
+                        ForeColor = Color.FromArgb(212, 212, 216),
+                        Location = new Point(12, 32),
+                        Width = card.Width - 140,
+                        Height = 45
+                    };
+                    card.Controls.Add(descLabel);
+
+                    var runButton = new Button
+                    {
+                        Text = "Approve & Run",
+                        Font = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold),
+                        BackColor = Color.FromArgb(34, 197, 94),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Size = new Size(110, 28),
+                        Location = new Point(card.Width - 125, 45),
+                        Cursor = Cursors.Hand
+                    };
+                    runButton.FlatAppearance.BorderSize = 0;
+                    runButton.Click += (s, e) =>
+                    {
+                        runButton.Enabled = false;
+                        runButton.BackColor = Color.Gray;
+                        runButton.Text = "Running...";
+                        ExecuteScriptFile(filename, content);
+                        runButton.Text = "Executed";
+                    };
+                    card.Controls.Add(runButton);
+                }
+                else if (header.StartsWith("VOLUME", StringComparison.OrdinalIgnoreCase))
+                {
+                    string direction = header[6..].Trim().ToUpperInvariant();
+                    var descLabel = new Label
+                    {
+                        Text = $"{activeAgent.CharacterName} requests to change system volume to {direction}.",
+                        Font = new Font("Segoe UI", 8.5f),
+                        ForeColor = Color.FromArgb(212, 212, 216),
+                        Location = new Point(12, 32),
+                        Width = card.Width - 140,
+                        Height = 45
+                    };
+                    card.Controls.Add(descLabel);
+
+                    var runButton = new Button
+                    {
+                        Text = "Approve",
+                        Font = new Font("Segoe UI Semibold", 8.5f, FontStyle.Bold),
+                        BackColor = Color.FromArgb(34, 197, 94),
+                        ForeColor = Color.White,
+                        FlatStyle = FlatStyle.Flat,
+                        Size = new Size(110, 28),
+                        Location = new Point(card.Width - 125, 45),
+                        Cursor = Cursors.Hand
+                    };
+                    runButton.FlatAppearance.BorderSize = 0;
+                    runButton.Click += (s, e) =>
+                    {
+                        runButton.Enabled = false;
+                        runButton.BackColor = Color.Gray;
+                        runButton.Text = "Approved";
+                        AdjustSystemVolume(direction);
+                    };
+                    card.Controls.Add(runButton);
+                }
+                else if (header.StartsWith("CHECKLIST", StringComparison.OrdinalIgnoreCase))
+                {
+                    string tasksRaw = header.Contains(' ') ? header[9..].Trim() : content;
+                    string[] tasks = tasksRaw.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    
+                    card.Height = 35 + tasks.Length * 28;
+                    iconLabel.Text = "☑ Interactive Checklist";
+                    
+                    int yOffset = 32;
+                    foreach (var task in tasks)
+                    {
+                        var cb = new CheckBox
+                        {
+                            Text = task,
+                            Font = new Font("Segoe UI", 9f),
+                            ForeColor = Color.FromArgb(212, 212, 216),
+                            Location = new Point(16, yOffset),
+                            Size = new Size(card.Width - 40, 24)
+                        };
+                        card.Controls.Add(cb);
+                        yOffset += 26;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+
+                return card;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void ExecuteScriptFile(string filename, string code)
+        {
+            try
+            {
+                string path = Path.Combine(AppConfig.ConfigFolder, "scripts");
+                Directory.CreateDirectory(path);
+                string filePath = Path.Combine(path, filename);
+                File.WriteAllText(filePath, code);
+
+                var processInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c \"{filePath}\"",
+                    UseShellExecute = true,
+                    CreateNoWindow = false
+                };
+                System.Diagnostics.Process.Start(processInfo);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Execution failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void AdjustSystemVolume(string action)
+        {
+            try
+            {
+                if (action.Contains("UP"))
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        keybd_event(VK_VOLUME_UP, 0, 0, 0);
+                        keybd_event(VK_VOLUME_UP, 0, KEYEVENTF_KEYUP, 0);
+                    }
+                }
+                else if (action.Contains("DOWN"))
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        keybd_event(VK_VOLUME_DOWN, 0, 0, 0);
+                        keybd_event(VK_VOLUME_DOWN, 0, KEYEVENTF_KEYUP, 0);
+                    }
+                }
+                else if (action.Contains("MUTE"))
+                {
+                    keybd_event(VK_VOLUME_MUTE, 0, 0, 0);
+                    keybd_event(VK_VOLUME_MUTE, 0, KEYEVENTF_KEYUP, 0);
+                }
+            }
+            catch { }
+        }
+
+        private async void CaptureScreenAsync()
+        {
+            double oldOpacity = Opacity;
+            Opacity = 0;
+            
+            await Task.Delay(130);
+
+            try
+            {
+                IntPtr hwnd = GetForegroundWindow();
+                Rectangle captureRect = Rectangle.Empty;
+
+                if (hwnd != IntPtr.Zero)
+                {
+                    RECT r;
+                    if (GetWindowRect(hwnd, out r))
+                    {
+                        captureRect = r.ToRectangle();
+                    }
+                }
+
+                if (captureRect.Width <= 10 || captureRect.Height <= 10)
+                {
+                    captureRect = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+                }
+
+                using var bmp = new Bitmap(captureRect.Width, captureRect.Height);
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    g.CopyFromScreen(captureRect.Left, captureRect.Top, 0, 0, captureRect.Size);
+                }
+
+                string folder = Path.Combine(AppConfig.ConfigFolder, "screenshots");
+                Directory.CreateDirectory(folder);
+                string path = Path.Combine(folder, $"screen_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+                bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+
+                // Add as image chip immediately
+                AddAttachmentFromFile(Path.GetFileName(path), $"[Screenshot Image base64 raw context path: {path}]");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to capture screen: {ex.Message}", "Capture Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Opacity = oldOpacity;
+            }
+        }
+
+        private void AddBubbleFooter(FlowLayoutPanel contentFlow, string fullText, bool isUser)
+        {
+            var footer = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                Height = 18,
+                Width = contentFlow.Width - 10,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0, 2, 0, 0)
+            };
+
+            var copyLink = new Label
+            {
+                Text = "Copy",
+                Font = new Font("Segoe UI Semibold", 8f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(148, 163, 184), // slate-400
+                Cursor = Cursors.Hand,
+                AutoSize = true,
+                Margin = new Padding(0, 1, 0, 0),
+                BackColor = Color.Transparent
+            };
+            copyLink.MouseEnter += (s, e) => copyLink.ForeColor = Color.White;
+            copyLink.MouseLeave += (s, e) => copyLink.ForeColor = Color.FromArgb(148, 163, 184);
+            copyLink.Click += (s, e) =>
+            {
+                Clipboard.SetText(fullText);
+                copyLink.Text = "Copied!";
+                var t = new System.Windows.Forms.Timer { Interval = 1500 };
+                t.Tick += (s2, e2) => { copyLink.Text = "Copy"; t.Stop(); t.Dispose(); };
+                t.Start();
+            };
+            footer.Controls.Add(copyLink);
+
+            contentFlow.Controls.Add(footer);
+        }
+
+        private Control CreateCodeBlockControl(string code, string language, int width)
+        {
+            var maxContentWidth = width - 10;
+
+            var codeContainer = new Panel
+            {
+                Width = maxContentWidth,
+                BackColor = Color.FromArgb(33, 33, 33), // slate-900
+                Margin = new Padding(0, 5, 0, 8),
+                Padding = new Padding(1)
+            };
+
+            var header = new Panel
+            {
+                Height = 26,
+                BackColor = Color.FromArgb(47, 47, 47), // slate-800
+                Dock = DockStyle.Top
+            };
+
+            var langLabel = new Label
+            {
+                Text = string.IsNullOrWhiteSpace(language) ? "code" : language.ToLower(),
+                Font = new Font("Consolas", 8f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(212, 212, 216),
+                Location = new Point(10, 5),
+                AutoSize = true
+            };
+            header.Controls.Add(langLabel);
+
+            var copyBtn = new Button
+            {
+                Text = "Copy",
+                Font = new Font("Segoe UI Semibold", 7.5f, FontStyle.Bold),
+                Size = new Size(46, 18),
+                Location = new Point(maxContentWidth - 55, 4),
+                BackColor = Color.FromArgb(82, 82, 82), // slate-600
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right
+            };
+            copyBtn.FlatAppearance.BorderSize = 0;
+
+            var cleanCode = code.Trim('\r', '\n');
+            copyBtn.Click += (s, e) =>
+            {
+                Clipboard.SetText(cleanCode);
+                copyBtn.Text = "Copied!";
+                var t = new System.Windows.Forms.Timer { Interval = 2000 };
+                t.Tick += (s2, e2) => { copyBtn.Text = "Copy"; t.Stop(); t.Dispose(); };
+                t.Start();
+            };
+            header.Controls.Add(copyBtn);
+
+            codeContainer.Controls.Add(header);
+
+            int lineCount = cleanCode.Split('\n').Length;
+            codeContainer.Height = Math.Clamp(lineCount * 17 + 38, 90, 320);
+
+            var codeBox = new TextBox
+            {
+                Multiline = true,
+                ReadOnly = true,
+                Text = cleanCode,
+                Font = new Font("Consolas", 9f),
+                BackColor = Color.FromArgb(33, 33, 33),
+                ForeColor = Color.FromArgb(244, 244, 245),
+                BorderStyle = BorderStyle.None,
+                Dock = DockStyle.Fill,
+                ScrollBars = ScrollBars.Vertical
+            };
+
+            var textWrapper = new Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(8, 4, 8, 4),
+                BackColor = Color.FromArgb(33, 33, 33)
+            };
+            textWrapper.Controls.Add(codeBox);
+            codeContainer.Controls.Add(textWrapper);
+
+            codeContainer.Paint += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0.5f, 0.5f, codeContainer.Width - 1f, codeContainer.Height - 1f), 8);
+                using var pen = new Pen(Color.FromArgb(64, 64, 64), 1f);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                e.Graphics.DrawPath(pen, p);
+            };
+            codeContainer.SizeChanged += (s, e) =>
+            {
+                using var p = RoundedRect(new RectangleF(0, 0, codeContainer.Width, codeContainer.Height), 8);
+                codeContainer.Region = new Region(p);
+            };
+
+            return codeContainer;
+        }
+
+        private void ScrollToBottomSmooth()
+        {
+            if (IsDisposed || _chatPanel == null || _chatPanel.IsDisposed) return;
+            
+            _scrollTimer?.Stop();
+            
+            if (_chatPanel.Controls.Count > 0)
+            {
+                var lastControl = _chatPanel.Controls[_chatPanel.Controls.Count - 1];
+                _chatPanel.ScrollControlIntoView(lastControl);
+            }
+        }
+
+        private void ResizeMessageRows()
+        {
+            if (_chatPanel == null) return;
+
+            _chatPanel.SuspendLayout();
+            
+            int panelWidth = _chatPanel.ClientSize.Width;
+            int maxContentWidth = 800;
+            int hPadding = 12;
+
+            if (panelWidth > maxContentWidth + 24)
+            {
+                hPadding = (panelWidth - maxContentWidth) / 2;
+            }
+            
+            // Adjust chat panel padding to center content
+            if (_chatPanel.Padding.Left != hPadding)
+            {
+                _chatPanel.Padding = new Padding(hPadding, 12, hPadding, 12);
+            }
+
+            int targetWidth = panelWidth - (hPadding * 2) - 25;
+            
+            // Center the input card to match chat width
+            if (_inputCard != null)
+            {
+                _inputContainer.Padding = new Padding(hPadding, 6, hPadding, 12);
+                PositionInputControls();
+            }
+
+            foreach (Control control in _chatPanel.Controls)
+            {
+                if (control is Panel rowPanel)
+                {
+                    rowPanel.Width = targetWidth;
+                    bool isUserMessage = (rowPanel.Tag as string) == "USER";
+                    
+                    var avatar = rowPanel.Controls["avatar"];
+                    var senderLabel = rowPanel.Controls["senderLabel"] as Label;
+                    var timeLabel = rowPanel.Controls["timeLabel"] as Label;
+                    var contentFlow = rowPanel.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+
+                    if (contentFlow != null)
+                    {
+                        if (isUserMessage)
+                        {
+                            contentFlow.Width = Math.Min(400, targetWidth - 70);
+                        }
+                        else
+                        {
+                            contentFlow.Width = targetWidth - 55;
+                        }
+
+                        foreach (Control child in contentFlow.Controls)
+                        {
+                            if (child is Label lbl && child != _activeAgentResponseLabel)
+                            {
+                                lbl.MaximumSize = new Size(contentFlow.Width - 10, 9999);
+                            }
+                            else if (child is Panel codeBlock)
+                            {
+                                codeBlock.Width = contentFlow.Width - 10;
+                            }
+                            else if (child is FlowLayoutPanel footer)
+                            {
+                                footer.Width = contentFlow.Width - 10;
+                            }
+                        }
+
+                        if (isUserMessage)
+                        {
+                            if (avatar != null) avatar.Location = new Point(targetWidth - 36, 6);
+                            if (timeLabel != null && avatar != null) timeLabel.Location = new Point(avatar.Left - timeLabel.PreferredWidth - 8, 8);
+                            if (senderLabel != null && timeLabel != null) senderLabel.Location = new Point(timeLabel.Left - senderLabel.PreferredWidth - 8, 6);
+                            contentFlow.Location = new Point(targetWidth - contentFlow.Width - 46, 26);
+                        }
+                        
+                        rowPanel.Height = Math.Max(48, contentFlow.Bottom + 8);
+                    }
+                    rowPanel.PerformLayout();
+                }
+            }
+            _chatPanel.ResumeLayout(true);
+        }
+
+        private List<MessageChunk> ParseMarkdown(string text)
+        {
+            var chunks = new List<MessageChunk>();
+            int index = 0;
+
+            while (index < text.Length)
+            {
+                int codeStart = text.IndexOf("```", index);
+                if (codeStart == -1)
+                {
+                    chunks.Add(new MessageChunk(false, text[index..]));
+                    break;
+                }
+
+                if (codeStart > index)
+                {
+                    chunks.Add(new MessageChunk(false, text[index..codeStart]));
+                }
+
+                int tagStart = codeStart + 3;
+                int newlineIndex = text.IndexOf('\n', tagStart);
+                string language = "";
+                int codeContentStart = tagStart;
+
+                if (newlineIndex != -1 && newlineIndex < text.IndexOf("```", tagStart))
+                {
+                    language = text[tagStart..newlineIndex].Trim();
+                    codeContentStart = newlineIndex + 1;
+                }
+
+                int codeEnd = text.IndexOf("```", codeContentStart);
+                if (codeEnd == -1)
+                {
+                    chunks.Add(new MessageChunk(true, text[codeContentStart..], language));
+                    break;
+                }
+
+                chunks.Add(new MessageChunk(true, text[codeContentStart..codeEnd], language));
+                index = codeEnd + 3;
+            }
+
+            return chunks;
+        }
+
+        private void LoadInitialMessage()
+        {
+            if (_history.Count == 0)
+            {
+                AddMessageBubble($"*Secure connection established. I am {_agent.CharacterName}.*\n\n{_agent.Context}", false);
+            }
+            else
+            {
+                foreach (var msg in _history)
+                {
+                    bool isUser = msg.Role == "user";
+                    string cleanMsg = msg.Content;
+                    Agent bubbleAgent = _agent;
+                    
+                    // Parse helper headers like "Sage:"
+                    if (!isUser && cleanMsg.Contains(':'))
+                    {
+                        int colonIdx = cleanMsg.IndexOf(':');
+                        if (colonIdx > 0 && colonIdx < 15)
+                        {
+                            string candidateName = cleanMsg[..colonIdx].Trim();
+                            var candidateDef = _config.Agents.FirstOrDefault(a => a.CharacterName.Equals(candidateName, StringComparison.OrdinalIgnoreCase));
+                            if (candidateDef != null)
+                            {
+                                bubbleAgent = DesktopAgentForm.ActiveAgents
+                                    .FirstOrDefault(a => a.Agent.CharacterName.Equals(candidateName, StringComparison.OrdinalIgnoreCase))?.Agent
+                                    ?? new Agent(candidateDef);
+                                cleanMsg = cleanMsg[(colonIdx + 1)..].Trim();
+                            }
+                        }
+                    }
+
+                    AddMessageBubbleWithAgent(cleanMsg, isUser, bubbleAgent);
+                }
+            }
+        }
+
+        private void LoadChatHistory()
+        {
+            try
+            {
+                var historyPath = GetHistoryPath();
+                if (File.Exists(historyPath))
+                {
+                    var json = File.ReadAllText(historyPath);
+                    _history = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? new List<ChatMessage>();
+                }
+            }
+            catch { }
+        }
+
+        private void SaveChatHistory()
+        {
+            try
+            {
+                var historyPath = GetHistoryPath();
+                Directory.CreateDirectory(Path.GetDirectoryName(historyPath)!);
+                var json = JsonSerializer.Serialize(_history, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(historyPath, json);
+            }
+            catch { }
+        }
+
+        private string GetHistoryPath()
+        {
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "LilAgentsWindows",
+                "chat_history");
+            return Path.Combine(folder, $"{_agent.CharacterName}.json");
+        }
+
+        private void CancelGeneration()
+        {
+            _currentCts?.Cancel();
+            _cancelButton.Visible = false;
+            _clearButton.Visible = true;
+            SetThinking(false);
+        }
+
+        private void SetThinking(bool isThinking)
+        {
+            _agent.SetThinking(isThinking);
+            if (_sendButton != null) _sendButton.Enabled = !isThinking;
+            if (_clearButton != null) _clearButton.Visible = !isThinking;
+            if (_cancelButton != null) _cancelButton.Visible = isThinking;
+            if (_messageBox != null) _messageBox.Enabled = !isThinking;
+
+            if (isThinking)
+            {
+                if (_statusIndicator != null) _statusIndicator.BackColor = Color.FromArgb(249, 115, 22); // orange-500
+                if (_statusLabel != null)
+                {
+                    _statusLabel.Text = "Thinking...";
+                    _statusLabel.ForeColor = Color.FromArgb(249, 115, 22);
+                }
+            }
+            else
+            {
+                if (_statusIndicator != null) _statusIndicator.BackColor = Color.FromArgb(34, 197, 94); // green-500
+                if (_statusLabel != null)
+                {
+                    _statusLabel.Text = "Online";
+                    _statusLabel.ForeColor = Color.FromArgb(148, 163, 184);
+                }
+            }
+        }
+
+        private void ClearChatHistory()
+        {
+            var result = MessageBox.Show(
+                $"Clear all conversation records for {_agent.CharacterName}?",
+                "Clear Conversation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    _history.Clear();
+                    var historyPath = GetHistoryPath();
+                    if (File.Exists(historyPath))
+                    {
+                        File.Delete(historyPath);
+                    }
+                    _chatPanel.Controls.Clear();
+                    LoadInitialMessage();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed: {ex.Message}");
+                }
+            }
+        }
+
+        // MIC recordings stub/typing simulation triggers
+        private void MicButton_Click(object? sender, EventArgs e)
+        {
+            _isRecording = !_isRecording;
+            if (_isRecording)
+            {
+                _micButton.BackColor = Color.FromArgb(239, 68, 68); // Red recording indicator
+                _micButton.Text = "🛑";
+                _waveOverlayPanel.Visible = true;
+                _messageBox.Visible = false;
+                _waveTickCount = 0;
+                _voiceTimer.Start();
+            }
+            else
+            {
+                StopMicRecordingAndTranscribe();
+            }
+        }
+
+        

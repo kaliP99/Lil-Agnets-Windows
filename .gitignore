@@ -1,0 +1,35 @@
+# === .NET / Visual Studio ===
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# === Build Logs & Diagnostic Outputs ===
+app_output.txt
+output.txt
+stderr.txt
+stdout.txt
+
+# === OS & System Files ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Local Python Script Files ===
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# === User Configuration / Local Data ===
+# Local agent configuration if any gets generated locally
+agents.json
+*.local
