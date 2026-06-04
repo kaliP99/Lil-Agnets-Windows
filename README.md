@@ -55,7 +55,7 @@ Sage and Nova walking on top of a Visual Studio window, while Bolt is crawling u
 The `AgentChatForm` showing a group chat with `@Nova` and `@Sage` replying. Include a PDF attachment pill and a rendered markdown table.
 
 ### 3. Agent Control Center
-![Desktop Playroom] (assets/SS_3.png)
+![Desktop Playroom](assets/SS_3.png)
 The `AgentManagerForm` editing Nova. Highlight custom physics properties and the walking/thinking animation frames.
 
 ---
