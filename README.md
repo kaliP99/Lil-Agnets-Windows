@@ -84,7 +84,7 @@ Here are the key interfaces you will interact with. *(Placeholders for final scr
 If you prefer building and running through PowerShell:
 ```powershell
 # Navigate to project root
-cd C:\Users\user\Brain\lil-agents-windows
+cd C:\[Your Path]\lil-agents-windows
 
 # Build the project in Release configuration
 dotnet build -c Release
