@@ -9,7 +9,7 @@ Lil' Agents is an interactive, physics-driven desktop companion framework for Wi
 
 ---
 
-## 🚀 Killer Features
+## Features
 
 ### 🧍 Interactive Desktop Companions
 * **State-Driven Behavior**: Agents walk, run, jump, sleep, sit, stretch, yawn, look around, and fly.
@@ -48,19 +48,15 @@ Here are the key interfaces you will interact with. *(Placeholders for final scr
 
 ### 1. The Desktop Playroom
 ![Desktop Playroom](assets/SS_1.png)
-* **What to capture**: Sage and Nova walking on top of a Visual Studio window, while Bolt is crawling up the side of a browser window, and Lumi is mid-air being flung.
+Sage and Nova walking on top of a Visual Studio window, while Bolt is crawling up the side of a browser window, and Lumi is mid-air being flung.
 
 ### 2. Streamlined Group Chat
-`[Placeholder: Elegant Chat Panel with code blocks, file attachments, and sequential responses]`
-* **What to capture**: The `AgentChatForm` showing a group chat with `@Nova` and `@Sage` replying. Include a PDF attachment pill and a rendered markdown table.
+![Desktop Playroom](assets/SS_2.png)
+The `AgentChatForm` showing a group chat with `@Nova` and `@Sage` replying. Include a PDF attachment pill and a rendered markdown table.
 
-### 3. Agent Meeting Mode
-`[Placeholder: Physical meeting circle formation in the center of the screen]`
-* **What to capture**: Active characters holding a circular formation in the center of the screen, with active speech bubbles streaming their discussion.
-
-### 4. Agent Control Center
-`[Placeholder: Setting UI showing provider selection, physics thresholds, and sprite frame selectors]`
-* **What to capture**: The `AgentManagerForm` editing Nova. Highlight custom physics properties and the walking/thinking animation frames.
+### 3. Agent Control Center
+![Desktop Playroom](assets/SS_3.png)
+The `AgentManagerForm` editing Nova. Highlight custom physics properties and the walking/thinking animation frames.
 
 ---
 
