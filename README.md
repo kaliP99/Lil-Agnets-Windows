@@ -47,7 +47,7 @@ Lil' Agents is an interactive, physics-driven desktop companion framework for Wi
 Here are the key interfaces you will interact with. *(Placeholders for final screenshots)*
 
 ### 1. The Desktop Playroom
-`[Placeholder: Desktop View of agents walking on code windows, climbing borders, and colliding for a handshake]`
+(C:\Users\user\Documents\GitHub\Lil-Agnets-Windows\SS_1.png)
 * **What to capture**: Sage and Nova walking on top of a Visual Studio window, while Bolt is crawling up the side of a browser window, and Lumi is mid-air being flung.
 
 ### 2. Streamlined Group Chat
